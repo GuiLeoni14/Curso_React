@@ -1,6 +1,6 @@
     import { Component } from 'react';
 
-    import './styles.css';
+    import './styles.scss';
 
     import { Posts } from '../../components/Posts';
     import { loadPosts } from '../../utils/load-posts'
@@ -60,16 +60,17 @@ import TextInput from '../../components/TextInput';
 
         return (
         <section className="container">
-            {
-                !!searchValue && (
-                    <>
-                        <h1>Value: {searchValue}</h1> <br /><br /><br />
-                    </>
-                )
-            }
-            
-            <TextInput searchValue={searchValue} headleChange={this.headleChange} />
-            
+            <div className="search-container">
+                {
+                    !!searchValue && (
+                        <>
+                            <h1>Value: {searchValue}</h1> <br /><br /><br />
+                        </>
+                    )
+                }
+                
+                <TextInput searchValue={searchValue} headleChange={this.headleChange} />
+            </div>
             {filteredPosts.length > 0 && (
                 <Posts posts={filteredPosts} />
             )}

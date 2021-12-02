@@ -2,7 +2,7 @@ import './styles.scss'
 function TextInput ({searchValue, headleChange}){
     return (
         <>
-            <input type="search" onChange={headleChange} value={searchValue} /> <br /><br /><br />
+            <input className="text-input" type="search" onChange={headleChange} value={searchValue} /> <br /><br /><br />
         </>
     )
 }
