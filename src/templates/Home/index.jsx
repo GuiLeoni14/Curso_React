@@ -1,98 +1,108 @@
-    import { Component } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-    import './styles.scss';
+const isObjectEqual = (objA, objB) => {
+return JSON.stringify(objA) === JSON.stringify(objB);
+};
 
-    import { Posts } from '../../components/Posts';
-    import { loadPosts } from '../../utils/load-posts'
-    import { Button } from '../../components/Button';
-import TextInput from '../../components/TextInput';
+const useFetch = (url, options) => {
+const [result, setResult] = useState(null);
+const [loading, setLoading] = useState(false);
+const [shouldLoad, setShouldLoad] = useState(false);
+const urlRef = useRef(url);
+const optionsRef = useRef(options);
 
-    export class Home extends Component {
-    state = {
-        posts: [],
-        allPosts: [],
-        page: 0,
-        postsPerPage: 10,
-        searchValue: ''
+useEffect(() => {
+    let changed = false;
+
+    if (!isObjectEqual(url, urlRef.current)) {
+    urlRef.current = url;
+    changed = true;
+    }
+
+    if (!isObjectEqual(options, optionsRef.current)) {
+    optionsRef.current = options;
+    changed = true;
+    }
+
+    if (changed) {
+    setShouldLoad((s) => !s);
+    }
+}, [url, options]);
+
+useEffect(() => {
+    let wait = false;
+    console.log('EFFECT', new Date().toLocaleString());
+    console.log(optionsRef.current.headers);
+
+    setLoading(true);
+
+    const fetchData = async () => {
+    await new Promise((r) => setTimeout(r, 1000));
+
+    try {
+        const response = await fetch(urlRef.current, optionsRef.current);
+        const jsonResult = await response.json();
+
+        if (!wait) {
+        setResult(jsonResult);
+        setLoading(false);
+        }
+    } catch (e) {
+        if (!wait) {
+        setLoading(false);
+        }
+        throw e;
+    }
     };
 
-    async componentDidMount() {
-        await this.loadPosts();
-    }
+    fetchData();
 
-    loadPosts = async () => {
-        const { page, postsPerPage } = this.state;
+    return () => {
+    wait = true;
+    };
+}, [shouldLoad]);
 
-        const postsAndPhotos = await loadPosts();
-        this.setState({
-        posts: postsAndPhotos.slice(page, postsPerPage),
-        allPosts: postsAndPhotos,
-        });
-    }
+return [result, loading];
+};
 
-    loadMorePosts = () => {
-        const {
-        page,
-        postsPerPage,
-        allPosts,
-        posts
-        } = this.state;
-        const nextPage = page + postsPerPage;
-        const nextPosts = allPosts.slice(nextPage, nextPage + postsPerPage);
-        posts.push(...nextPosts);
+export const Home = () => {
+const [postId, setPostId] = useState('');
+const [result, loading] = useFetch('https://jsonplaceholder.typicode.com/posts/' + postId, {
+    headers: {
+    abc: '1' + postId,
+    },
+});
 
-        this.setState({ posts, page: nextPage });
-    }
+useEffect(() => {
+    console.log('ID do post', postId);
+}, [postId]);
 
-    headleChange = (e) => {
-        const { value } = e.target;
-        this.setState({ searchValue: value });
-    }
+if (loading) {
+    return <p>Loading...</p>;
+}
 
-    render() {
-        const { posts, page, postsPerPage, allPosts, searchValue } = this.state;
-        const noMorePosts = page + postsPerPage >= allPosts.length;
+const handleClick = (id) => {
+    setPostId(id);
+};
 
-        const filteredPosts = !!searchValue ? 
-        allPosts.filter(post => {
-            return post.title.toLowerCase().includes(searchValue.toLowerCase());
-        }) : posts;
-
-        return (
-        <section className="container">
-            <div className="search-container">
-                {
-                    !!searchValue && (
-                        <>
-                            <h1>Value: {searchValue}</h1> <br /><br /><br />
-                        </>
-                    )
-                }
-                
-                <TextInput searchValue={searchValue} headleChange={this.headleChange} />
+if (!loading && result) {
+    // 1
+    return (
+    <div>
+        {result?.length > 0 ? (
+        result.map((p) => (
+            <div key={`post-${p.id}`} onClick={() => handleClick(p.id)}>
+            <p>{p.title}</p>
             </div>
-            {filteredPosts.length > 0 && (
-                <Posts posts={filteredPosts} />
-            )}
+        ))
+        ) : (
+        <div onClick={() => handleClick('')}>
+            <p>{result.title}</p>
+        </div>
+        )}
+    </div>
+    );
+}
 
-            {filteredPosts.length === 0 && (
-                <p>Post não existem!</p>
-            )}
-            <div className="button-container">
-            {
-                !searchValue && (
-                    <>
-                        <Button
-                            text="Load more posts"
-                            onClick={this.loadMorePosts}
-                            disabled={noMorePosts}
-                        />
-                    </>
-                )
-            }
-            </div>
-        </section>
-        );
-    }
-    }
-
+return <h1>Oi</h1>;
+};
