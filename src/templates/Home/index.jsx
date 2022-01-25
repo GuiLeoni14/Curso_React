@@ -31,8 +31,8 @@ useEffect(() => {
 
 useEffect(() => {
     let wait = false;
-    console.log('EFFECT', new Date().toLocaleString());
-    console.log(optionsRef.current.headers);
+    const controller = new AbortController();
+    const signal = controller.signal;
 
     setLoading(true);
 
@@ -40,7 +40,7 @@ useEffect(() => {
     await new Promise((r) => setTimeout(r, 1000));
 
     try {
-        const response = await fetch(urlRef.current, optionsRef.current);
+        const response = await fetch(urlRef.current, { signal, ...optionsRef.current });
         const jsonResult = await response.json();
 
         if (!wait) {
@@ -51,7 +51,7 @@ useEffect(() => {
         if (!wait) {
         setLoading(false);
         }
-        throw e;
+        console.log('MY ERROR:', e.message);
     }
     };
 
@@ -59,6 +59,7 @@ useEffect(() => {
 
     return () => {
     wait = true;
+    controller.abort();
     };
 }, [shouldLoad]);
 
@@ -73,10 +74,6 @@ const [result, loading] = useFetch('https://jsonplaceholder.typicode.com/posts/'
     },
 });
 
-useEffect(() => {
-    console.log('ID do post', postId);
-}, [postId]);
-
 if (loading) {
     return <p>Loading...</p>;
 }
@@ -86,7 +83,7 @@ const handleClick = (id) => {
 };
 
 if (!loading && result) {
-    // 1
+    // 1234
     return (
     <div>
         {result?.length > 0 ? (
